@@ -89,17 +89,19 @@ function workstationReducer(
 interface WorkstationSlotProps {
     workstationSlot: WorkstationSlotFromQuery
     principles: Principle[]
+    includeItems?: boolean
 }
 
 const WorkstationSlotInfo = ({ name, accepts }: WorkstationSlotFromQuery) => (
     <CardHeader
         title={name}
         titleTypographyProps={{ variant: "h6" }}
-        avatar={<AspectIconGroup aspects={accepts} />}
+        avatar={accepts.length > 0 && <AspectIconGroup aspects={accepts} />}
+        sx={{ p: 1 }}
     />
 )
 
-const WorkstationSlot = ({
+const FullWorkstationSlot = ({
     workstationSlot,
     principles,
 }: WorkstationSlotProps) => (
@@ -121,11 +123,26 @@ const WorkstationSlot = ({
     </Collapsible>
 )
 
+const WorkstationSlot = ({
+    workstationSlot,
+    principles,
+    includeItems,
+}: WorkstationSlotProps) =>
+    includeItems ? (
+        <FullWorkstationSlot
+            workstationSlot={workstationSlot}
+            principles={principles}
+        />
+    ) : (
+        <WorkstationSlotInfo {...workstationSlot} />
+    )
+
 interface WorkstationProps {
-    workstation: WorkstationFromQuery
+    workstation: VisibleWorkstation | WorkstationFromQuery
+    includeItems?: boolean
 }
 
-const Workstation = ({ workstation }: WorkstationProps) => (
+const Workstation = ({ workstation, includeItems }: WorkstationProps) => (
     <Card sx={{ boxShadow: "none" }}>
         <CardHeader
             title={workstation.id}
@@ -143,6 +160,7 @@ const Workstation = ({ workstation }: WorkstationProps) => (
                         <WorkstationSlot
                             workstationSlot={slot}
                             principles={getPrinciples(workstation)}
+                            includeItems={includeItems}
                         />
                     </Fragment>
                 ))}
@@ -150,7 +168,38 @@ const Workstation = ({ workstation }: WorkstationProps) => (
     </Card>
 )
 
-export default function WorkstationView() {
+interface FilteredWorkstationsViewProps {
+    workstations: VisibleWorkstation[] | WorkstationFromQuery[]
+    includeItems?: boolean
+}
+// Displays a filtered set of workstations
+// includeItems default set here, and assumed to be set in children
+const FilteredWorkstationsView = ({
+    workstations,
+    includeItems = true,
+}: FilteredWorkstationsViewProps) => (
+    <Stack spacing={2}>
+        {workstations
+            .toSorted((a, b) => a.id.localeCompare(b.id))
+            .map((workstation) => (
+                <Workstation
+                    key={workstation.id}
+                    workstation={workstation}
+                    includeItems={includeItems}
+                />
+            ))}
+    </Stack>
+)
+
+interface WorkstationsViewProps {
+    filterPrinciple?: Principle | undefined
+    includeItems?: boolean
+}
+
+export default function WorkstationsView({
+    filterPrinciple,
+    includeItems = true,
+}: WorkstationsViewProps) {
     const [{ data }] = useQuery({ query: workstationQueryDocument })
     // prefetch
     useQuery({ query: skillQueryDocument })
@@ -160,12 +209,17 @@ export default function WorkstationView() {
         () =>
             data!.workstation.map((workstation) => ({
                 ...workstation,
-                isVisible: true,
+                isVisible:
+                    filterPrinciple === undefined ||
+                    workstation.principles.includes(filterPrinciple),
             })),
-        [data],
+        [data, filterPrinciple],
     )
     const [state, dispatch] = useReducer(workstationReducer, initialState)
-    const [selectedPrinciple, setPrinciple] = useState<Principle | undefined>()
+
+    const [selectedPrinciple, setPrinciple] = useState<Principle | undefined>(
+        filterPrinciple,
+    )
     const handleSelectedPrinciple = useCallback(
         (principle: Principle | undefined) => {
             dispatch({ type: "filter", principle })
@@ -173,21 +227,29 @@ export default function WorkstationView() {
         },
         [dispatch, setPrinciple],
     )
+
+    const visibleWorkstations = state.filter(({ isVisible }) => isVisible)
+
     return (
         <Stack maxWidth="md" marginInline="auto" spacing={2}>
-            <PrincipleFilterBar
-                selectedPrinciple={selectedPrinciple}
-                onSelectPrinciple={handleSelectedPrinciple}
-            />
+            <Collapsible
+                cardHeader={
+                    <CardHeader
+                        title="Filters"
+                        titleTypographyProps={{ variant: "h5" }}
+                    />
+                }
+            >
+                <PrincipleFilterBar
+                    selectedPrinciple={selectedPrinciple}
+                    onSelectPrinciple={handleSelectedPrinciple}
+                />
+            </Collapsible>
             <ItemsDrawerContextProvider>
-                {state
-                    .filter(({ isVisible }) => isVisible)
-                    .map((workstation) => (
-                        <Workstation
-                            key={workstation.id}
-                            workstation={workstation}
-                        />
-                    ))}
+                <FilteredWorkstationsView
+                    workstations={visibleWorkstations}
+                    includeItems={includeItems}
+                />
             </ItemsDrawerContextProvider>
         </Stack>
     )

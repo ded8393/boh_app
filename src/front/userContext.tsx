@@ -1,14 +1,29 @@
 import axios from "axios"
-import { ReactNode, createContext, useContext, useMemo, useState } from "react"
+import {
+    ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+} from "react"
+import { useQuery } from "urql"
 
-import { ItemRef, KnownRecipe, KnownSkill, UserData } from "./types"
+import { graphql } from "./gql"
+import {
+    ItemRef,
+    KnownRecipe,
+    KnownSkill,
+    RecipeFromQuery,
+    UserData,
+} from "./types"
 
 const API_URL = "http://localhost:8000"
 
 interface UserDataContextProps {
     knownItems: ItemRef[]
     knownSkills: KnownSkill[]
-    knownRecipes: KnownRecipe[]
+    knownRecipes: RecipeFromQuery[]
 }
 
 const UserDataContext = createContext<UserDataContextProps>({
@@ -16,6 +31,59 @@ const UserDataContext = createContext<UserDataContextProps>({
     knownSkills: [],
     knownRecipes: [],
 })
+
+export const recipeQueryDocument = graphql(`
+    query Recipes {
+        recipe {
+            id
+            principle
+            principle_amount
+            source_aspect {
+                id
+            }
+            source_item {
+                id
+                name
+            }
+            product {
+                id
+                name
+            }
+            crafting_action
+            skills {
+                id
+                name
+            }
+        }
+    }
+`)
+
+interface updateKnownRecipesArgs {
+    state: KnownRecipe[]
+    recipes: RecipeFromQuery[]
+}
+
+export function updateKnownRecipes({
+    state,
+    recipes,
+}: updateKnownRecipesArgs): RecipeFromQuery[] {
+    return recipes
+        .filter(({ id }) => state.some((recipe) => recipe.id === id))
+        .map((recipe) => {
+            const knownRecipe = state.find((r) => r.id === recipe.id)
+            const knownSkillSet = new Set(
+                knownRecipe?.skills?.map(({ id }) => id) ?? [],
+            )
+            return {
+                ...recipe,
+                skills:
+                    knownRecipe?.skills?.filter(({ id }) =>
+                        knownSkillSet.has(id),
+                    ) ?? [],
+            }
+        })
+        .toSorted((a, b) => a.id.localeCompare(b.id))
+}
 
 export const useUserDataContext = (): UserDataContextProps =>
     useContext(UserDataContext)
@@ -28,7 +96,18 @@ export const UserDataContextProvider = ({
 }: UserDataContextProviderProps) => {
     const [knownItems, setItems] = useState<ItemRef[]>([])
     const [knownSkills, setSkills] = useState<KnownSkill[]>([])
-    const [knownRecipes, setRecipes] = useState<KnownRecipe[]>([])
+    const [knownRecipes, setRecipes] = useState<RecipeFromQuery[]>([])
+
+    const [{ data }] = useQuery({ query: recipeQueryDocument })
+
+    const recipeData = useMemo(() => data?.recipe ?? [], [data])
+    const setKnownRecipes = useCallback(
+        ({ state, recipes }: updateKnownRecipesArgs) => {
+            const knownRecipes = updateKnownRecipes({ state, recipes })
+            setRecipes(knownRecipes)
+        },
+        [setRecipes],
+    )
 
     useMemo(() => {
         axios
@@ -37,12 +116,12 @@ export const UserDataContextProvider = ({
                 const { items, skills, recipes } = data
                 setItems(items)
                 setSkills(skills)
-                setRecipes(recipes)
+                setKnownRecipes({ state: recipes, recipes: recipeData })
             })
             .catch((error) => {
                 console.log(error)
             })
-    }, [setItems, setSkills, setRecipes])
+    }, [setItems, setSkills, setKnownRecipes, recipeData])
     return (
         <UserDataContext.Provider
             value={{ knownItems, knownSkills, knownRecipes }}

@@ -30,20 +30,16 @@ import { useDrawerContext } from "./components/Drawer/index.tsx"
 import { AppBar, Main } from "./components/Drawer/styled.tsx"
 import ElevationScroll from "./components/ElevationScroll.tsx"
 import LoadingIndicator from "./components/LoadingIndicator.tsx"
-import Aspects from "./routes/Aspects"
 import AssistantView from "./routes/Assistant.tsx"
+import CraftView from "./routes/Craft.tsx"
 import Home from "./routes/Home"
-import AllItemsView from "./routes/Items.tsx"
-import Principles from "./routes/Principles.tsx"
 import SkillsView from "./routes/Skills"
-import WorkstationView from "./routes/Workstation.tsx"
+import WorkstationsView from "./routes/Workstation.tsx"
 
 const ROUTE_LINKS = [
     { label: "Home", href: "/", pattern: "/" },
-    { label: "Aspects", href: "/aspects", pattern: "/aspects" },
-    { label: "Principles", href: "/principles", pattern: "/principles" },
     { label: "Skills", href: "/skills", pattern: "/skills" },
-    { label: "Items", href: "/items", pattern: "/items" },
+    { label: "Craft", href: "/craft", pattern: "/craft" },
     { label: "Assistance", href: "/assistance", pattern: "/assistance" },
     { label: "Workstations", href: "/workstations", pattern: "/workstations" },
 ]
@@ -177,12 +173,10 @@ function Content() {
             <Suspense fallback={<LoadingIndicator sx={{ m: "auto" }} />}>
                 <SlideRoutes>
                     <Route index element={<Home />} />
-                    <Route path="aspects" element={<Aspects />} />
-                    <Route path="principles" element={<Principles />} />
                     <Route path="skills" element={<SkillsView />} />
-                    <Route path="items" element={<AllItemsView />} />
+                    <Route path="craft" element={<CraftView />} />
                     <Route path="assistance" element={<AssistantView />} />
-                    <Route path="workstations" element={<WorkstationView />} />
+                    <Route path="workstations" element={<WorkstationsView />} />
                     <Route path="*" element={<Navigate replace to="/" />} />
                 </SlideRoutes>
             </Suspense>

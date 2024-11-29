@@ -1,7 +1,6 @@
 import { useQuery } from "urql"
 
 import Box from "@mui/material/Box"
-import Card from "@mui/material/Card"
 import CardContent from "@mui/material/CardContent"
 import CardHeader from "@mui/material/CardHeader"
 import List from "@mui/material/List"
@@ -53,12 +52,13 @@ function Aspect({
     assistants = [],
 }: AspectProps) {
     return (
-        <Card>
+        <div>
             <CardHeader
                 title={nameAspect ? id : ""}
                 avatar={<AspectIcon aspect={id} />}
+                titleTypographyProps={{ variant: "h6" }}
             />
-            <CardContent>
+            <CardContent style={{ padding: 0 }}>
                 {showAssistant && assistants.length > 0 && (
                     <List disablePadding>
                         {assistants.map(({ id }) => (
@@ -69,7 +69,7 @@ function Aspect({
                     </List>
                 )}
             </CardContent>
-        </Card>
+        </div>
     )
 }
 

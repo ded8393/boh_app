@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box"
-import Card, { CardProps } from "@mui/material/Card"
+import { CardProps } from "@mui/material/Card"
 import CardHeader from "@mui/material/CardHeader"
 
 import AvatarStack from "../components/AvatarStack"
@@ -26,21 +26,18 @@ interface PrincipleCardProps extends Omit<CardProps, "title"> {
     disablePadding?: boolean
 }
 
-function PrincipleCard({
+function PrincipleCardHeader({
     id,
     title = id,
     disablePadding = false,
-    ...cardProps
 }: PrincipleCardProps) {
     return (
-        <Card {...cardProps}>
-            <CardHeader
-                title={String(title)}
-                titleTypographyProps={{ variant: "h6" }}
-                avatar={<PrincipleIcon principle={id} />}
-                sx={{ padding: disablePadding ? 0 : 2 }}
-            />
-        </Card>
+        <CardHeader
+            title={String(title)}
+            titleTypographyProps={{ variant: "h6" }}
+            avatar={<PrincipleIcon principle={id} />}
+            sx={{ padding: disablePadding ? 0 : 2 }}
+        />
     )
 }
 
@@ -56,9 +53,9 @@ const Principles = () => (
         }}
     >
         {Object.values(Principle).map((principle) => (
-            <PrincipleCard key={principle} id={principle} />
+            <PrincipleCardHeader key={principle} id={principle} />
         ))}
     </Box>
 )
 
-export { PrincipleIconGroup, PrincipleCard, Principles as default }
+export { PrincipleIconGroup, PrincipleCardHeader, Principles as default }
