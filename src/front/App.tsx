@@ -157,7 +157,6 @@ function Drawer() {
 const Offset = styled("div")(({ theme }) => theme.mixins.toolbar)
 
 function Content() {
-    const theme = useTheme()
     const { open, width } = useDrawerContext()
     return (
         <Main
@@ -166,7 +165,6 @@ function Content() {
             component="main"
             sx={{
                 flexGrow: 1,
-                paddingBlockEnd: theme.spacing(3),
                 display: "flex",
                 flexDirection: "column",
                 "& > *": { flexGrow: 0 },
